@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { generateText } from "ai";
 import { z } from "zod";
-import { createLovableAiGatewayProvider } from "./ai-gateway.server";
+import { createVercelAiGatewayProvider } from "./ai-gateway.server";
 
 const MAX_IMAGE_BYTES = 6 * 1024 * 1024; // ~6 MB decoded cap
 

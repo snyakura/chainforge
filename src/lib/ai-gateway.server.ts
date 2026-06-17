@@ -1,9 +1,10 @@
-import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { createGateway } from "ai";
 
-export function createLovableAiGatewayProvider(apiKey: string) {
-  return createOpenAICompatible({
-    name: "lovable",
-    baseURL: "https://ai.gateway.lovable.dev/v1",
-    headers: { "Lovable-API-Key": apiKey },
+// Uses the Vercel AI Gateway (connected to this project). Reads AI_GATEWAY_API_KEY
+// from the environment automatically; pass a plain model string like
+// "google/gemini-3-flash" to the returned provider.
+export function createVercelAiGatewayProvider() {
+  return createGateway({
+    apiKey: process.env.AI_GATEWAY_API_KEY,
   });
 }
