@@ -37,10 +37,6 @@ function formatDate(raw: string): string {
   if (!raw) return "";
   const d = new Date(raw);
   if (Number.isNaN(d.getTime())) return raw;
-  
-  // Safe string check for server rendering to prevent the hydration 418 error
-  if (typeof window === "undefined") return "";
-
   return d.toLocaleString(undefined, {
     month: "short",
     day: "numeric",
