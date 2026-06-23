@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
@@ -39,7 +38,7 @@ function formatDate(raw: string): string {
   const d = new Date(raw);
   if (Number.isNaN(d.getTime())) return raw;
   
-  // Safe string structure for server preview to prevent Error #418 hydration mismatch
+  // Safe string check for server rendering to prevent the hydration 418 error
   if (typeof window === "undefined") return "";
 
   return d.toLocaleString(undefined, {
@@ -52,13 +51,6 @@ function formatDate(raw: string): string {
 
 function BlogPage() {
   const fetchNews = useServerFn(getForexNews);
-  const [mounted, setMounted] = useState(false);
-
-  // Set mounted state once the browser window safely takes over execution
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["forex-news"],
     queryFn: () => fetchNews(),
@@ -103,7 +95,7 @@ function BlogPage() {
       </section>
 
       <section className="mx-auto max-w-6xl px-6 pb-24">
-        {!mounted || isLoading ? (
+        {isLoading ? (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
               <div
