@@ -61,7 +61,7 @@ Be specific with price levels if visible. Keep total under 250 words. No disclai
 
    const { text } = await generateText({
       // Call the gateway provider natively
-      model: gateway("gemini-2.5-flash"),
+      model: gateway("gemini-1.5-flash"),
       messages: [
         { role: "system", content: system },
         {
