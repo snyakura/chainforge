@@ -47,12 +47,11 @@ function extractImage(raw: string): string | undefined {
 }
 
 export const getForexNews = createServerFn({ method: "GET" }).handler(
-  async (): Promise<{ items: ForexNewsItem[]; error?: string }> => {
+  async () => {
     const feeds = [
-  "https://www.forexlive.com/feed", 
-  "https://finance.yahoo.com/news/provider-forexlive/rss"
-];
-
+      "https://www.forexlive.com/feed",
+      "https://finance.yahoo.com/news/provider-forexlive/rss",
+    ];
     const items: ForexNewsItem[] = [];
 
     for (const url of feeds) {
@@ -63,9 +62,11 @@ export const getForexNews = createServerFn({ method: "GET" }).handler(
             Accept: "application/rss+xml, application/xml, text/xml",
           },
         });
+
         if (!res.ok) continue;
         const xml = await res.text();
         const rawItems = xml.match(/<item[\s\S]*?<\/item>/g) ?? [];
+
         for (const raw of rawItems) {
           items.push({
             title: extract(raw, "title"),
@@ -77,7 +78,7 @@ export const getForexNews = createServerFn({ method: "GET" }).handler(
           });
         }
       } catch (e) {
-        console.error("fxstreet feed failed:", url, e);
+        console.error("Feed failed to fetch:", url, e);
       }
     }
 
@@ -91,7 +92,9 @@ export const getForexNews = createServerFn({ method: "GET" }).handler(
       seen.add(it.link);
       return Boolean(it.title && it.link);
     });
+
     unique.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
+    
     return { items: unique.slice(0, 40) };
-  },
+  }
 );
