@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { generateText } from "ai";
 import { z } from "zod";
-import { createGeminiProvider } from "./ai-gateway.server";
+import { createOpenRouterProvider } from "./ai-gateway.server";
 
 const MAX_IMAGE_BYTES = 6 * 1024 * 1024; // ~6 MB decoded cap
 
@@ -43,9 +43,13 @@ export const analyseChart = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Input.parse(d))
   .handler(async ({ data }) => {
     assertTrustedOrigin();
-    const key = process.env.GEMINI_API_KEY;
-if (!key) throw new Error("Missing GEMINI_API_KEY");
-const gateway = createGeminiProvider(key);
+    const key = process.env.OPENROUTER_API_KEY;
+
+if (!key) {
+  throw new Error("Missing OPENROUTER_API_KEY");
+}
+
+const gateway = createOpenRouterProvider(key);
 const system = `
 You are ChainForge AI, a professional forex analyst.
 
@@ -104,49 +108,41 @@ let analysis = "";
 let lastError: unknown = null;
 
 const models = [
-  "gemini-2.0-flash",
-  "gemini-2.0-flash-lite",
+  "qwen/qwen2.5-vl-72b-instruct:free",
+  "meta-llama/llama-3.2-11b-vision-instruct:free",
 ];
+
 
 for (const modelName of models) {
   try {
-    console.log(`Trying model: ${modelName}`);
+    console.log(`Trying ${modelName}`);
 
     const result = await generateText({
       model: gateway(modelName),
       messages,
-      maxRetries: 3,
+      maxRetries: 2,
     });
 
     analysis = result.text;
 
-    console.log(`Success using ${modelName}`);
+    console.log(`Success with ${modelName}`);
 
     break;
-  } catch (error: any) {
-  lastError = error;
+  } catch (error) {
+    lastError = error;
 
-  console.error("=================================");
-  console.error(`MODEL FAILED: ${modelName}`);
-  console.error("MESSAGE:", error?.message);
-  console.error("STACK:", error?.stack);
-  console.error("FULL ERROR:", JSON.stringify(error, null, 2));
-  console.error("=================================");
-
-  continue;
-}
+    console.error(`Failed ${modelName}`, error);
+  }
 }
 
 if (!analysis) {
-  console.error("All Gemini models failed:", lastError);
-
   throw new Error(
-  `Gemini failed. Last error: ${
-    lastError instanceof Error
-      ? lastError.message
-      : String(lastError)
-  }`
-);
+    `All AI models failed. ${
+      lastError instanceof Error
+        ? lastError.message
+        : String(lastError)
+    }`
+  );
 }
 
 return {
