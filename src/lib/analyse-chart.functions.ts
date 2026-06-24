@@ -85,16 +85,15 @@ TP2:
 
 Be specific with price levels if visible. Keep total under 250 words. No disclaimers.`;
 
- const messages = [
-  { role: "system" as const, content: system },
+const messages = [
   {
     role: "user" as const,
     content: [
       {
         type: "text" as const,
-        text: data.notes
-          ? `Analyse this chart. Trader notes: ${data.notes}`
-          : "Analyse this chart.",
+        text: `${system}\n\nAnalyse this chart. ${
+          data.notes ? `Trader notes: ${data.notes}` : ""
+        }`,
       },
       {
         type: "image" as const,
@@ -109,8 +108,10 @@ let lastError: unknown = null;
 
 const models = [
   "qwen/qwen2.5-vl-72b-instruct:free",
-  "meta-llama/llama-3.2-11b-vision-instruct:free",
+  "qwen/qwen2.5-vl-32b-instruct",
+  "google/gemini-1.5-flash",
 ];
+
 
 
 for (const modelName of models) {
@@ -148,6 +149,4 @@ if (!analysis) {
 return {
   analysis,
 };
-
-    return { analysis };
   });
