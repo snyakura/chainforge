@@ -51,8 +51,9 @@ function extractImage(raw: string): string | undefined {
   return undefined;
 }
 
+// Kept the handler syntax completely standard so the compiler doesn't choke
 export const getForexNews = createServerFn({ method: "GET" }).handler(
-  async (): Promise<{ items: ForexNewsItem[]; error?: string }> => {
+  async () => {
     const feeds = [
       "https://www.forexlive.com/feed",
       "https://finance.yahoo.com/news/provider-forexlive/rss",
@@ -61,15 +62,13 @@ export const getForexNews = createServerFn({ method: "GET" }).handler(
 
     for (const url of feeds) {
       try {
-        // Vercel Edge/Serverless friendly fetch with appropriate timeout & headers
+        // Removed the 'as any' casting that broke the TanStack compiler parser
         const res = await fetch(url, {
           headers: {
             "User-Agent": "Mozilla/5.0 (compatible; ChainForgeBot/1.0)",
             Accept: "application/rss+xml, application/xml, text/xml",
           },
-          // Optional: Next/Vercel cache control can be added here if needed
-          next: { revalidate: 300 }, 
-        } as any);
+        });
 
         if (!res.ok) continue;
         const xml = await res.text();
@@ -102,6 +101,7 @@ export const getForexNews = createServerFn({ method: "GET" }).handler(
     });
 
     unique.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
+    
     return { items: unique.slice(0, 40) };
   }
 );
@@ -142,13 +142,12 @@ export function ForexFeedView({ newsData }: ForexFeedViewProps) {
     <div style={{ padding: "1rem" }}>
       <h2>Forex News Feed</h2>
 
-      {/* 🚀 Wrapper guards the feed list from blowing up during SSR hydration */}
       <ClientOnly fallback={<p>Loading latest dope feed...</p>}>
-        {newsData.error ? (
+        {newsData?.error ? (
           <p style={{ color: "red" }}>{newsData.error}</p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-            {newsData.items.map((item) => (
+            {newsData?.items?.map((item) => (
               <article key={item.link} style={{ borderBottom: "1px solid #ccc", paddingBottom: "1rem" }}>
                 {item.image && (
                   <img 
