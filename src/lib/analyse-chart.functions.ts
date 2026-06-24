@@ -60,8 +60,8 @@ export const analyseChart = createServerFn({ method: "POST" })
 Be specific with price levels if visible. Keep total under 250 words. No disclaimers.`;
 
  const { text } = await generateText({
-      // The master fallback for 100% free vision processing
-      model: gateway("openrouter/free"), 
+      // Official, permanent free open-source vision model on OpenRouter
+      model: gateway("meta-llama/llama-3.2-11b-vision-instruct:free"), 
       messages: [
         { role: "system", content: system },
         {
