@@ -1,13 +1,15 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
-  // This explicitly instructs Lovable's Nitro bundle engine to adapt to Vercel
   vite: {
-    nitro: {
-      preset: "vercel"
+    // This tells the underlying bundler to output standard serverless function specs
+    build: {
+      ssr: true
     }
   },
   tanstackStart: {
-    server: { entry: "server" },
+    server: {
+      entry: "src/server.ts", // Points explicitly to your server entry point wrapper
+    },
   },
 });
