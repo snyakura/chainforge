@@ -1,4 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
+import { useEffect, useState, type ReactNode } from "react";
+
+// ==========================================
+// 1. Types & Server Function (Forex Feed)
+// ==========================================
 
 export type ForexNewsItem = {
   title: string;
@@ -49,23 +54,27 @@ function extractImage(raw: string): string | undefined {
 export const getForexNews = createServerFn({ method: "GET" }).handler(
   async (): Promise<{ items: ForexNewsItem[]; error?: string }> => {
     const feeds = [
-  "https://www.forexlive.com/feed", 
-  "https://finance.yahoo.com/news/provider-forexlive/rss"
-];
-
+      "https://www.forexlive.com/feed",
+      "https://finance.yahoo.com/news/provider-forexlive/rss",
+    ];
     const items: ForexNewsItem[] = [];
 
     for (const url of feeds) {
       try {
+        // Vercel Edge/Serverless friendly fetch with appropriate timeout & headers
         const res = await fetch(url, {
           headers: {
             "User-Agent": "Mozilla/5.0 (compatible; ChainForgeBot/1.0)",
             Accept: "application/rss+xml, application/xml, text/xml",
           },
-        });
+          // Optional: Next/Vercel cache control can be added here if needed
+          next: { revalidate: 300 }, 
+        } as any);
+
         if (!res.ok) continue;
         const xml = await res.text();
         const rawItems = xml.match(/<item[\s\S]*?<\/item>/g) ?? [];
+
         for (const raw of rawItems) {
           items.push({
             title: extract(raw, "title"),
@@ -77,7 +86,7 @@ export const getForexNews = createServerFn({ method: "GET" }).handler(
           });
         }
       } catch (e) {
-        console.error("fxstreet feed failed:", url, e);
+        console.error("Feed failed to fetch:", url, e);
       }
     }
 
@@ -91,7 +100,75 @@ export const getForexNews = createServerFn({ method: "GET" }).handler(
       seen.add(it.link);
       return Boolean(it.title && it.link);
     });
+
     unique.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
     return { items: unique.slice(0, 40) };
-  },
+  }
 );
+
+// ==========================================
+// 2. Custom Safe Client-Only Wrapper Component
+// ==========================================
+
+interface ClientOnlyProps {
+  children: ReactNode;
+  fallback?: ReactNode;
+}
+
+export function ClientOnly({ children, fallback = null }: ClientOnlyProps) {
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
+  if (!hasMounted) {
+    return <>{fallback}</>;
+  }
+
+  return <>{children}</>;
+}
+
+// ==========================================
+// 3. Example Usage Component
+// ==========================================
+
+interface ForexFeedViewProps {
+  newsData: { items: ForexNewsItem[]; error?: string };
+}
+
+export function ForexFeedView({ newsData }: ForexFeedViewProps) {
+  return (
+    <div style={{ padding: "1rem" }}>
+      <h2>Forex News Feed</h2>
+
+      {/* 🚀 Wrapper guards the feed list from blowing up during SSR hydration */}
+      <ClientOnly fallback={<p>Loading latest dope feed...</p>}>
+        {newsData.error ? (
+          <p style={{ color: "red" }}>{newsData.error}</p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+            {newsData.items.map((item) => (
+              <article key={item.link} style={{ borderBottom: "1px solid #ccc", paddingBottom: "1rem" }}>
+                {item.image && (
+                  <img 
+                    src={item.image} 
+                    alt={item.title} 
+                    style={{ maxWidth: "100%", height: "auto", borderRadius: "4px" }} 
+                  />
+                )}
+                <h3 style={{ margin: "0.5rem 0" }}>
+                  <a href={item.link} target="_blank" rel="noopener noreferrer">
+                    {item.title}
+                  </a>
+                </h3>
+                <p style={{ fontSize: "0.9rem", color: "#555" }}>{item.description}</p>
+                <small style={{ color: "#888" }}>{item.pubDate}</small>
+              </article>
+            ))}
+          </div>
+        )}
+      </ClientOnly>
+    </div>
+  );
+}
