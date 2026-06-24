@@ -46,37 +46,103 @@ export const analyseChart = createServerFn({ method: "POST" })
     const key = process.env.GEMINI_API_KEY;
 if (!key) throw new Error("Missing GEMINI_API_KEY");
 const gateway = createGeminiProvider(key);
-    const system = `You are ChainForge AI, an elite multi-timeframe market analyst. Analyse the uploaded trading chart screenshot and return a concise, structured breakdown with these sections, each prefixed by its emoji header on its own line:
+const system = `
+You are ChainForge AI, a professional forex analyst.
+
+Analyse the uploaded chart screenshot using:
+
+- Market Structure
+- Liquidity
+- Supply and Demand
+- ICT Concepts
+- Support and Resistance
+
+Return ONLY:
 
 📊 Instrument & Timeframe
+
 🧭 Market Structure
-🎯 Key Levels (support / resistance / liquidity)
-📈 Bias (bullish / bearish / neutral + confidence 0-100)
-🎬 Trade Plan (entry, stop loss, take profit 1, take profit 2)
+
+🎯 Key Levels
+
+📈 Bias
+(Direction + Confidence %)
+
+🎬 Trade Plan
+Entry:
+Stop Loss:
+TP1:
+TP2:
+
 ⚠️ Invalidation
+
 💡 Notes
+
 
 Be specific with price levels if visible. Keep total under 250 words. No disclaimers.`;
 
- const { text } = await generateText({
-      // Official, permanent free open-source vision model on OpenRouter
-      model: gateway("gemini-2.5-flash"),
-      messages: [
-        { role: "system", content: system },
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: data.notes
-                ? `Analyse this chart. Trader notes: ${data.notes}`
-                : "Analyse this chart.",
-            },
-            { type: "image", image: data.imageDataUrl },
-          ],
-        },
-      ],
+ const messages = [
+  { role: "system" as const, content: system },
+  {
+    role: "user" as const,
+    content: [
+      {
+        type: "text" as const,
+        text: data.notes
+          ? `Analyse this chart. Trader notes: ${data.notes}`
+          : "Analyse this chart.",
+      },
+      {
+        type: "image" as const,
+        image: data.imageDataUrl,
+      },
+    ],
+  },
+];
+
+let analysis = "";
+let lastError: unknown = null;
+
+const models = [
+  "gemini-2.0-flash",
+  "gemini-2.0-flash-lite",
+];
+
+for (const modelName of models) {
+  try {
+    console.log(`Trying model: ${modelName}`);
+
+    const result = await generateText({
+      model: gateway(modelName),
+      messages,
+      maxRetries: 3,
     });
 
-    return { analysis: text };
+    analysis = result.text;
+
+    console.log(`Success using ${modelName}`);
+
+    break;
+  } catch (error) {
+    lastError = error;
+
+    console.error(`Failed using ${modelName}:`, error);
+
+    continue;
+  }
+}
+
+if (!analysis) {
+  console.error("All Gemini models failed:", lastError);
+
+  throw new Error(
+    "Chart analysis service is temporarily unavailable. Please try again in a few moments."
+  );
+}
+
+return {
+  analysis,
+};
+
+    return { analysis };
   });
