@@ -60,8 +60,8 @@ export const analyseChart = createServerFn({ method: "POST" })
 Be specific with price levels if visible. Keep total under 250 words. No disclaimers.`;
 
    const { text } = await generateText({
-      // Points to OpenRouter's completely free multimodal model tier
-      model: gateway("openrouter/free"), 
+      // Points straight to the free global processing tier
+      model: gateway("google/gemini-2.5-pro-exp-03-25:free"), 
       messages: [
         { role: "system", content: system },
         {
