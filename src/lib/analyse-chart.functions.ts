@@ -31,11 +31,11 @@ function assertTrustedOrigin() {
   } catch {
     throw new Error("Forbidden origin");
   }
-  const allowed =
-    host === "localhost" ||
-    host === "127.0.0.1" ||
-    host.endsWith(".lovable.app") ||
-    host.endsWith(".lovable.dev");
+  const allowed = 
+  host === "localhost" ||
+  host === "127.0.0.1" ||
+  host === "chainforge.org.zw" ||
+  host.endsWith(".lovable.app");
   if (!allowed) throw new Error("Forbidden origin");
 }
 
