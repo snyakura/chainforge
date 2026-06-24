@@ -123,21 +123,30 @@ for (const modelName of models) {
     console.log(`Success using ${modelName}`);
 
     break;
-  } catch (error) {
-    lastError = error;
+  } catch (error: any) {
+  lastError = error;
 
-    console.error(`Failed using ${modelName}:`, error);
+  console.error("=================================");
+  console.error(`MODEL FAILED: ${modelName}`);
+  console.error("MESSAGE:", error?.message);
+  console.error("STACK:", error?.stack);
+  console.error("FULL ERROR:", JSON.stringify(error, null, 2));
+  console.error("=================================");
 
-    continue;
-  }
+  continue;
+}
 }
 
 if (!analysis) {
   console.error("All Gemini models failed:", lastError);
 
   throw new Error(
-    "Chart analysis service is temporarily unavailable. Please try again in a few moments."
-  );
+  `Gemini failed. Last error: ${
+    lastError instanceof Error
+      ? lastError.message
+      : String(lastError)
+  }`
+);
 }
 
 return {
