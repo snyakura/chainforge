@@ -49,9 +49,9 @@ function extractImage(raw: string): string | undefined {
 export const getForexNews = createServerFn({ method: "GET" }).handler(
   async (): Promise<{ items: ForexNewsItem[]; error?: string }> => {
     const feeds = [
-      "https://www.fxstreet.com/rss/news",
-      "https://www.fxstreet.com/rss/analysis",
-    ];
+  "https://www.forexlive.com/feed", 
+  "https://finance.yahoo.com/news/provider-forexlive/rss"
+];
 
     const items: ForexNewsItem[] = [];
 
