@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { generateText } from "ai";
 import { z } from "zod";
-import { createLovableAiGatewayProvider } from "./ai-gateway.server";
+import { createGeminiProvider } from "./ai-gateway.server";
 
 const MAX_IMAGE_BYTES = 6 * 1024 * 1024; // ~6 MB decoded cap
 
@@ -43,10 +43,9 @@ export const analyseChart = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Input.parse(d))
   .handler(async ({ data }) => {
     assertTrustedOrigin();
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
-    const gateway = createLovableAiGatewayProvider(key);
-
+    const key = process.env.GEMINI_API_KEY;
+if (!key) throw new Error("Missing GEMINI_API_KEY");
+const gateway = createGeminiProvider(key);
     const system = `You are ChainForge AI, an elite multi-timeframe market analyst. Analyse the uploaded trading chart screenshot and return a concise, structured breakdown with these sections, each prefixed by its emoji header on its own line:
 
 📊 Instrument & Timeframe
@@ -61,7 +60,7 @@ Be specific with price levels if visible. Keep total under 250 words. No disclai
 
  const { text } = await generateText({
       // Official, permanent free open-source vision model on OpenRouter
-      model: gateway("meta-llama/llama-3.2-11b-vision-instruct:free"), 
+      model: gateway("gemini-2.5-flash"),
       messages: [
         { role: "system", content: system },
         {

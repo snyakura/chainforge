@@ -1,11 +1,7 @@
-import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 
-export function createLovableAiGatewayProvider(apiKey: string) {
-  return createOpenAICompatible({
-    name: "openrouter",
-    baseURL: "https://openrouter.ai/api/v1",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-    },
+export function createGeminiProvider(apiKey: string) {
+  return createGoogleGenerativeAI({
+    apiKey,
   });
 }
