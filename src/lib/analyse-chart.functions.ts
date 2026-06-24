@@ -59,8 +59,9 @@ export const analyseChart = createServerFn({ method: "POST" })
 
 Be specific with price levels if visible. Keep total under 250 words. No disclaimers.`;
 
-    const { text } = await generateText({
-      model: gateway.chatModel("google/gemini-3-flash-preview"),
+   const { text } = await generateText({
+      // Call the gateway provider natively
+      model: gateway("gemini-2.5-flash"),
       messages: [
         { role: "system", content: system },
         {
