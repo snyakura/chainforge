@@ -60,8 +60,8 @@ export const analyseChart = createServerFn({ method: "POST" })
 Be specific with price levels if visible. Keep total under 250 words. No disclaimers.`;
 
    const { text } = await generateText({
-      // Call the gateway provider natively
-      model: gateway("gemini-1.5-flash"),
+      // Uses Meta's high-intelligence model via OpenRouter's free tunnel
+      model: gateway("google/gemini-2.5-flash"), 
       messages: [
         { role: "system", content: system },
         {
