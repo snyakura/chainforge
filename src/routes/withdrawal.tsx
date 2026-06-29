@@ -483,11 +483,11 @@ function WithdrawalPage() {
                             reminder,
                         );
 
-                      const dispatch = () => {
-                        if (!isFormValid) return;
-                        const msg = buildMsg();
-                        window.open(`https://wa.me/263784293089?text=${msg}`, "_blank", "noopener,noreferrer");
-                      };
+                     const dispatch = () => {
+                  if (!isFormValid) return;
+                  const msg = buildMsg();
+                  window.open(`https://wa.me/+263782048523?text=${msg}`, "_blank", "noopener,noreferrer");
+                };
 
                       return (
                         <button
