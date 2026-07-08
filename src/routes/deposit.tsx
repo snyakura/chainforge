@@ -33,7 +33,7 @@ export const Route = createFileRoute("/deposit")({
 });
 
 type BrokerType = "weltrade" | "deriv" | "other";
-type PaymentMethodType = "ecocash" | "innbucks" | "fnb_eft";
+type PaymentMethodType = "ecocash" | "innbucks" | "omari" | "fnb_eft";
 
 const MIN_DEPOSIT = 1;
 
@@ -46,7 +46,7 @@ function DepositPage() {
   });
 
   const [selectedBroker, setSelectedBroker] = useState<BrokerType>("weltrade");
-  const [crNumber, setCrNumber] = useState<string>("");
+  const [derivUsername, setDerivUsername] = useState<string>("");
   const [binanceAddress, setBinanceAddress] = useState<string>("");
   const [selectedMethod, setSelectedMethod] =
     useState<PaymentMethodType>("ecocash");
@@ -56,10 +56,11 @@ function DepositPage() {
   const fee = +(amountNum * 0.1).toFixed(2);
   const net = +(amountNum * 0.9).toFixed(2);
 
-  const isCrInvalid =
+  const isUsernameInvalid =
     selectedBroker === "deriv" &&
-    crNumber.trim().length > 0 &&
-    !/^CR\d+$/i.test(crNumber.trim());
+    derivUsername.trim().length > 0 &&
+    derivUsername.trim().length < 3; // Basic safety check for a valid username string
+  
   const isAmountInvalid = amountNum < MIN_DEPOSIT;
 
   const isFormValid =
@@ -68,7 +69,7 @@ function DepositPage() {
     formData.email.trim() !== "" &&
     formData.whatsapp.trim() !== "" &&
     !isAmountInvalid &&
-    (selectedBroker !== "deriv" || /^CR\d+$/i.test(crNumber.trim())) &&
+    (selectedBroker !== "deriv" || derivUsername.trim().length >= 3) &&
     ((selectedBroker !== "weltrade" && selectedBroker !== "other") || binanceAddress.trim() !== "");
 
   return (
@@ -198,27 +199,27 @@ function DepositPage() {
               {selectedBroker === "deriv" && (
                 <div className="mt-5 pt-4 border-t border-border/50">
                   <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/70 block mb-2">
-                    Deriv CR Number
+                    Deriv Username / Account Name
                   </label>
                   <div
                     className={`flex items-center rounded-xl border px-3 py-2.5 bg-background/40 transition-colors ${
-                      isCrInvalid
+                      isUsernameInvalid
                         ? "border-rose-500/80 focus-within:border-rose-500"
                         : "border-border focus-within:border-primary-glow/50"
                     }`}
                   >
                     <input
                       type="text"
-                      placeholder="CR123456"
-                      value={crNumber}
-                      onChange={(e) => setCrNumber(e.target.value)}
-                      className="w-full bg-transparent text-sm text-foreground outline-none border-none p-0 font-mono uppercase tracking-wide"
+                      placeholder="Enter your Deriv username"
+                      value={derivUsername}
+                      onChange={(e) => setDerivUsername(e.target.value)}
+                      className="w-full bg-transparent text-sm text-foreground outline-none border-none p-0 font-sans tracking-wide"
                     />
                   </div>
-                  {isCrInvalid && (
+                  {isUsernameInvalid && (
                     <p className="flex items-center gap-1.5 text-xs text-rose-500 font-medium mt-2">
                       <AlertCircle className="h-3.5 w-3.5" />
-                      CR Number should start with CR only
+                      Please enter a valid Deriv username
                     </p>
                   )}
                 </div>
@@ -258,11 +259,12 @@ function DepositPage() {
                 Payment Method
               </h3>
 
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-4">
                 {(
                   [
                     { id: "ecocash", label: "EcoCash", logo: "/ecocash.jpg" },
                     { id: "innbucks", label: "InnBucks", logo: "/innbucks.png" },
+                    { id: "omari", label: "Omari", logo: "/omari.png" },
                     { id: "fnb_eft", label: "FNB EFT", logo: "/fnb.png" },
                   ] as { id: PaymentMethodType; label: string; logo: string }[]
                 ).map((method) => (
@@ -352,8 +354,8 @@ function DepositPage() {
 
               <div className="space-y-3.5 text-xs border-b border-border/60 pb-5">
                 <Row label="Target Broker" value={selectedBroker} capitalize />
-                {selectedBroker === "deriv" && crNumber && (
-                  <Row label="Account ID" value={crNumber} mono uppercase />
+                {selectedBroker === "deriv" && derivUsername && (
+                  <Row label="Deriv Username" value={derivUsername} />
                 )}
                 {(selectedBroker === "weltrade" || selectedBroker === "other") && binanceAddress && (
                   <Row label="Payout Address" value={binanceAddress} mono />
@@ -384,7 +386,7 @@ function DepositPage() {
                 </div>
               </div>
 
-              {/* Per-method protocol — flashing so it can't be missed */}
+              {/* Per-method protocol */}
               <div className="mt-5 p-4 rounded-2xl protocol-flash text-xs">
                 <p className="text-[10px] font-bold uppercase tracking-wider font-['Montserrat'] mb-3 flex items-center gap-1.5 protocol-flash-title">
                   <Zap className="h-3.5 w-3.5" />
@@ -395,12 +397,13 @@ function DepositPage() {
                   <FnbDepositInstructions />
                 ) : (
                   <MobileDepositInstructions
-                    method={selectedMethod}
+                    method={selectedMethod as "ecocash" | "innbucks" | "omari"}
                     showQrStep={selectedBroker !== "deriv"}
                   />
                 )}
               </div>
 
+              {/* WhatsApp Text Compiler */}
               {(() => {
                 const qrLine =
                   selectedBroker !== "deriv"
@@ -416,7 +419,7 @@ function DepositPage() {
                       `*WhatsApp:* ${formData.whatsapp}\n` +
                       `─────────────────────\n` +
                       `*Broker:* ${selectedBroker.toUpperCase()}` +
-                      (selectedBroker === "deriv" ? ` (CR: ${crNumber})` : "") +
+                      (selectedBroker === "deriv" ? `\n*Deriv Username:* ${derivUsername}` : "") +
                       ((selectedBroker === "weltrade" || selectedBroker === "other") ? `\n*Binance Address:* ${binanceAddress}` : "") +
                       `\n` +
                       `*Payment Method:* ${selectedMethod
@@ -461,8 +464,7 @@ function DepositPage() {
   );
 }
 
-/* ---------- Small helpers ---------- */
-
+/* ---------- Small helpers remain unchanged ---------- */
 function Field({
   label,
   icon,
@@ -557,10 +559,12 @@ function MobileDepositInstructions({
   method,
   showQrStep,
 }: {
-  method: "ecocash" | "innbucks";
+  method: "ecocash" | "innbucks" | "omari";
   showQrStep: boolean;
 }) {
   const ECOCASH_CODE = "*153*2*2*002905#";
+  const PHONE_NUMBER = "0784293089";
+
   return (
     <ol className="space-y-3 text-amber-100/90 list-decimal pl-3.5">
       {method === "ecocash" ? (
@@ -577,13 +581,28 @@ function MobileDepositInstructions({
             EcoCash → Merchant Payment → paste the code → enter amount → confirm.
           </p>
         </li>
-      ) : (
+      ) : method === "innbucks" ? (
         <li>
           <span className="font-semibold text-white">SEND FUNDS</span> via
           InnBucks to:
           <div className="mt-1.5 grid gap-1 rounded-lg bg-black/40 p-2 font-mono text-[11px] text-white">
-            <span>Number: 0784293089</span>
+            <span className="flex items-center gap-2">
+              Number:
+              <CopyChip value={PHONE_NUMBER} />
+            </span>
             <span>Name: Paradise Mnqobi Sibanda</span>
+          </div>
+        </li>
+      ) : (
+        <li>
+          <span className="font-semibold text-white">SEND FUNDS</span> via
+          Omari to:
+          <div className="mt-1.5 grid gap-1 rounded-lg bg-black/40 p-2 font-mono text-[11px] text-white">
+            <span className="flex items-center gap-2">
+              Number:
+              <CopyChip value={PHONE_NUMBER} />
+            </span>
+            <span>Name: Marc Anthony</span>
           </div>
         </li>
       )}

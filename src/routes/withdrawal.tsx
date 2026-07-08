@@ -32,9 +32,8 @@ export const Route = createFileRoute("/withdrawal")({
   }),
   component: WithdrawalPage,
 });
-
 type BrokerType = "weltrade" | "deriv" | "other";
-type PayoutMethodType = "ecocash" | "innbucks" | "fnb_eft";
+type PayoutMethodType = "ecocash" | "innbucks" | "omari" | "fnb_eft";
 
 function WithdrawalPage() {
   const [formData, setFormData] = useState({
@@ -49,7 +48,7 @@ function WithdrawalPage() {
     useState<PayoutMethodType>("ecocash");
   const [amount, setAmount] = useState<string>("500");
 
-  // Mobile-wallet payout details (Ecocash / InnBucks)
+  // Mobile-wallet payout details (Ecocash / InnBucks / Omari)
   const [walletNumber, setWalletNumber] = useState<string>("");
   const [walletName, setWalletName] = useState<string>("");
 
@@ -60,7 +59,7 @@ function WithdrawalPage() {
   const [bankBranchCode, setBankBranchCode] = useState<string>("");
 
   const requiresWalletDetails =
-    selectedMethod === "ecocash" || selectedMethod === "innbucks";
+    selectedMethod === "ecocash" || selectedMethod === "innbucks" || selectedMethod === "omari";
   const requiresBankDetails = selectedMethod === "fnb_eft";
   const requiresBinanceQr =
     selectedBroker === "weltrade" || selectedBroker === "other";
@@ -261,11 +260,12 @@ function WithdrawalPage() {
                 Receiving Payout Method
               </h3>
 
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-4">
                 {(
                   [
                     { id: "ecocash", label: "EcoCash", logo: "/ecocash.jpg" },
                     { id: "innbucks", label: "InnBucks", logo: "/innbucks.png" },
+                    { id: "omari", label: "Omari", logo: "/omari.png" }, // Added Omari here
                     { id: "fnb_eft", label: "FNB EFT", logo: "/fnb.png" },
                   ] as { id: PayoutMethodType; label: string; logo: string }[]
                 ).map((method) => (
@@ -306,7 +306,11 @@ function WithdrawalPage() {
                 <div className="mt-5 pt-5 border-t border-border/50 grid gap-4 sm:grid-cols-2">
                   <Field
                     label={`${
-                      selectedMethod === "ecocash" ? "EcoCash" : "InnBucks"
+                      selectedMethod === "ecocash"
+                        ? "EcoCash"
+                        : selectedMethod === "innbucks"
+                        ? "InnBucks"
+                        : "Omari"
                     } Number`}
                     icon={
                       <Phone className="h-4 w-4 text-muted-foreground mr-2.5" />
@@ -483,11 +487,11 @@ function WithdrawalPage() {
                             reminder,
                         );
 
-                     const dispatch = () => {
-                  if (!isFormValid) return;
-                  const msg = buildMsg();
-                  window.open(`https://wa.me/+263782048523?text=${msg}`, "_blank", "noopener,noreferrer");
-                };
+                      const dispatch = () => {
+                        if (!isFormValid) return;
+                        const msg = buildMsg();
+                        window.open(`https://wa.me/+263782048523?text=${msg}`, "_blank", "noopener,noreferrer");
+                      };
 
                       return (
                         <button
@@ -625,10 +629,17 @@ function StandardWithdrawalProtocol() {
         </li>
         <li>
           <span className="font-semibold text-white">Wait for Processing</span>{" "}
-          — our team transfers the funds from{" "}
-          <span className="font-mono text-white">MAZ FX (PVT) LTD</span> business
-          account <span className="font-mono text-white">63051409861</span> to
-          your account.
+          — our team transfers the funds from:
+          <div className="mt-1.5 grid gap-2 rounded-lg bg-black/40 p-2 text-[11px] text-white">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1.5">
+              <span className="text-muted-foreground">Company Name:</span>
+              <CopyChip value="MAZ FX (PVT) LTD" />
+            </div>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1.5">
+              <span className="text-muted-foreground">Account Number:</span>
+              <CopyChip value="63051409861" />
+            </div>
+          </div>
         </li>
         <li>
           <span className="font-semibold text-white">Confirm Receipt</span> —
@@ -655,8 +666,13 @@ function DerivWithdrawalProtocol() {
       <ol className="space-y-3 list-decimal pl-3.5">
         <li>
           <span className="font-semibold text-white">Step 1:</span> log in to
-          your Deriv account and initiate a withdrawal to{" "}
-          <span className="font-mono text-white">"The Forex Mafia"</span> agent.
+          your Deriv account and initiate a withdrawal to:
+          <div className="mt-1.5 flex items-center gap-2">
+            <CopyChip value="The Forex Mafia" />
+            <span className="text-[10px] uppercase tracking-widest text-muted-foreground/70">
+              Tap to copy agent
+            </span>
+          </div>
         </li>
         <li>
           <span className="font-semibold text-white">Step 2:</span> once the
