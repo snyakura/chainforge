@@ -490,7 +490,13 @@ function WithdrawalPage() {
                       const dispatch = () => {
                         if (!isFormValid) return;
                         const msg = buildMsg();
-                        window.open(`https://wa.me/+263782048523?text=${msg}`, "_blank", "noopener,noreferrer");
+                        
+                        // Conditional WhatsApp routing based on the selected broker
+                        const targetNumber = (selectedBroker === "weltrade" || selectedBroker === "other") 
+                          ? "+263784293089" 
+                          : "+263782048523";
+
+                        window.open(`https://wa.me/${targetNumber}?text=${msg}`, "_blank", "noopener,noreferrer");
                       };
 
                       return (
