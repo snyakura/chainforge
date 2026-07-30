@@ -399,6 +399,7 @@ function DepositPage() {
                   <MobileDepositInstructions
                     method={selectedMethod as "ecocash" | "innbucks" | "omari"}
                     showQrStep={selectedBroker !== "deriv"}
+                    isDeriv={selectedBroker === "deriv"}
                   />
                 )}
               </div>
@@ -438,9 +439,9 @@ function DepositPage() {
                   const msg = buildMsg();
                   
                   // Conditional WhatsApp number based on the selected broker
-                  const targetNumber = (selectedBroker === "weltrade" || selectedBroker === "other") 
-                    ? "+263784293089" 
-                    : "+263782048523";
+                  const targetNumber = selectedBroker === "deriv" 
+                    ? "+263782048523" 
+                    : "+263784293089";
 
                   window.open(`https://wa.me/${targetNumber}?text=${msg}`, "_blank", "noopener,noreferrer");
                 };
@@ -564,12 +565,15 @@ function CopyChip({ value, label }: { value: string; label?: string }) {
 function MobileDepositInstructions({
   method,
   showQrStep,
+  isDeriv,
 }: {
   method: "ecocash" | "innbucks" | "omari";
   showQrStep: boolean;
+  isDeriv: boolean;
 }) {
   const ECOCASH_CODE = "*153*2*2*002905#";
   const PHONE_NUMBER = "0784293089";
+  const PARADISE_PHONE = "0782048523";
 
   return (
     <ol className="space-y-3 text-amber-100/90 list-decimal pl-3.5">
@@ -594,9 +598,9 @@ function MobileDepositInstructions({
           <div className="mt-1.5 grid gap-1 rounded-lg bg-black/40 p-2 font-mono text-[11px] text-white">
             <span className="flex items-center gap-2">
               Number:
-              <CopyChip value={PHONE_NUMBER} />
+              <CopyChip value={isDeriv ? PARADISE_PHONE : PHONE_NUMBER} />
             </span>
-            <span>Name: Paradise Mnqobi Sibanda</span>
+            <span>Name: {isDeriv ? "Paradise Mnqobi Sibanda" : "Marc Anthony"}</span>
           </div>
         </li>
       ) : (
@@ -606,9 +610,9 @@ function MobileDepositInstructions({
           <div className="mt-1.5 grid gap-1 rounded-lg bg-black/40 p-2 font-mono text-[11px] text-white">
             <span className="flex items-center gap-2">
               Number:
-              <CopyChip value={PHONE_NUMBER} />
+              <CopyChip value={isDeriv ? PARADISE_PHONE : PHONE_NUMBER} />
             </span>
-            <span>Name: Marc Anthony</span>
+            <span>Name: {isDeriv ? "Paradise Mnqobi Sibanda" : "Marc Anthony"}</span>
           </div>
         </li>
       )}
