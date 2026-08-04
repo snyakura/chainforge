@@ -571,51 +571,30 @@ function MobileDepositInstructions({
   showQrStep: boolean;
   isDeriv: boolean;
 }) {
-  const ECOCASH_CODE = "*153*2*2*002905#";
   const PHONE_NUMBER = "0784293089";
   const PARADISE_PHONE = "0782048523";
 
+  const targetPhone = isDeriv ? PARADISE_PHONE : PHONE_NUMBER;
+  const targetName = isDeriv ? "Paradise Mnqobi Sibanda" : "Marc Anthony";
+
   return (
     <ol className="space-y-3 text-amber-100/90 list-decimal pl-3.5">
-      {method === "ecocash" ? (
-        <li>
-          <span className="font-semibold text-white">DIAL MERCHANT CODE</span>{" "}
-          to pay our desk:
-          <div className="mt-1.5 flex items-center gap-2">
-            <CopyChip value={ECOCASH_CODE} />
-            <span className="text-[10px] uppercase tracking-widest text-muted-foreground/70">
-              Tap to copy
-            </span>
-          </div>
-          <p className="text-[11px] mt-1.5 text-amber-100/80">
-            EcoCash → Merchant Payment → paste the code → enter amount → confirm.
-          </p>
-        </li>
-      ) : method === "innbucks" ? (
-        <li>
-          <span className="font-semibold text-white">SEND FUNDS</span> via
-          InnBucks to:
-          <div className="mt-1.5 grid gap-1 rounded-lg bg-black/40 p-2 font-mono text-[11px] text-white">
-            <span className="flex items-center gap-2">
-              Number:
-              <CopyChip value={isDeriv ? PARADISE_PHONE : PHONE_NUMBER} />
-            </span>
-            <span>Name: {isDeriv ? "Paradise Mnqobi Sibanda" : "Marc Anthony"}</span>
-          </div>
-        </li>
-      ) : (
-        <li>
-          <span className="font-semibold text-white">SEND FUNDS</span> via
-          Omari to:
-          <div className="mt-1.5 grid gap-1 rounded-lg bg-black/40 p-2 font-mono text-[11px] text-white">
-            <span className="flex items-center gap-2">
-              Number:
-              <CopyChip value={isDeriv ? PARADISE_PHONE : PHONE_NUMBER} />
-            </span>
-            <span>Name: {isDeriv ? "Paradise Mnqobi Sibanda" : "Marc Anthony"}</span>
-          </div>
-        </li>
-      )}
+      <li>
+        <span className="font-semibold text-white">SEND FUNDS</span> via{" "}
+        {method === "ecocash"
+          ? "EcoCash"
+          : method === "innbucks"
+          ? "InnBucks"
+          : "Omari"}{" "}
+        to:
+        <div className="mt-1.5 grid gap-1 rounded-lg bg-black/40 p-2 font-mono text-[11px] text-white">
+          <span className="flex items-center gap-2">
+            Number:
+            <CopyChip value={targetPhone} />
+          </span>
+          <span>Name: {targetName}</span>
+        </div>
+      </li>
       <li>
         <span className="font-semibold text-white">SCREENSHOT</span> the
         successful transaction.

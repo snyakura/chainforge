@@ -32,8 +32,34 @@ export const Route = createFileRoute("/withdrawal")({
   }),
   component: WithdrawalPage,
 });
+
 type BrokerType = "weltrade" | "deriv" | "other";
 type PayoutMethodType = "ecocash" | "innbucks" | "omari" | "fnb_eft";
+
+interface BrokerOption {
+  id: BrokerType;
+  label: string;
+  logo: string;
+}
+
+interface PayoutOption {
+  id: PayoutMethodType;
+  label: string;
+  logo: string;
+}
+
+const BROKER_OPTIONS: BrokerOption[] = [
+  { id: "weltrade", label: "Weltrade", logo: "/wel.png" },
+  { id: "deriv", label: "Deriv", logo: "/der.png" },
+  { id: "other", label: "Other", logo: "/bin.png" },
+];
+
+const PAYOUT_OPTIONS: PayoutOption[] = [
+  { id: "ecocash", label: "EcoCash", logo: "/ecocash.jpg" },
+  { id: "innbucks", label: "InnBucks", logo: "/innbucks.png" },
+  { id: "omari", label: "Omari", logo: "/omari.png" },
+  { id: "fnb_eft", label: "FNB EFT", logo: "/fnb.png" },
+];
 
 function WithdrawalPage() {
   const [formData, setFormData] = useState({
@@ -44,26 +70,29 @@ function WithdrawalPage() {
   });
 
   const [selectedBroker, setSelectedBroker] = useState<BrokerType>("weltrade");
-  const [selectedMethod, setSelectedMethod] =
-    useState<PayoutMethodType>("ecocash");
+  const [selectedMethod, setSelectedMethod] = useState<PayoutMethodType>("ecocash");
   const [amount, setAmount] = useState<string>("500");
 
-  // Mobile-wallet payout details (Ecocash / InnBucks / Omari)
+  // Mobile-wallet payout details
   const [walletNumber, setWalletNumber] = useState<string>("");
   const [walletName, setWalletName] = useState<string>("");
 
-  // EFT bank payout details (FNB EFT or other South-African bank)
+  // EFT bank payout details
   const [bankName, setBankName] = useState<string>("");
   const [bankAccountName, setBankAccountName] = useState<string>("");
   const [bankAccountNumber, setBankAccountNumber] = useState<string>("");
   const [bankBranchCode, setBankBranchCode] = useState<string>("");
 
+  // Conditional Logic Rules
   const requiresWalletDetails =
-    selectedMethod === "ecocash" || selectedMethod === "innbucks" || selectedMethod === "omari";
+    selectedMethod === "ecocash" ||
+    selectedMethod === "innbucks" ||
+    selectedMethod === "omari";
   const requiresBankDetails = selectedMethod === "fnb_eft";
   const requiresBinanceQr =
     selectedBroker === "weltrade" || selectedBroker === "other";
 
+  // Form Validation
   const isFormValid =
     formData.firstName.trim() !== "" &&
     formData.lastName.trim() !== "" &&
@@ -76,6 +105,67 @@ function WithdrawalPage() {
       (bankName.trim() !== "" &&
         bankAccountName.trim() !== "" &&
         bankAccountNumber.trim() !== ""));
+
+  // Payout & Fee Calculations
+  const grossAmt = Number(amount || 0);
+  const feePct = grossAmt >= 1000 ? 0.05 : 0;
+  const wFee = +(grossAmt * feePct).toFixed(2);
+  const netPayout = +(grossAmt - wFee).toFixed(2);
+
+  // Field Handler
+  const handleInputChange = (field: keyof typeof formData, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // WhatsApp Message Dispatcher
+  const handleDispatchWhatsApp = () => {
+    if (!isFormValid) return;
+
+    const walletLine = requiresWalletDetails
+      ? `*Wallet Number:* ${walletNumber}\n*Name on Account:* ${walletName}\n`
+      : "";
+    const bankLine = requiresBankDetails
+      ? `*Bank:* ${bankName}\n*Account Holder:* ${bankAccountName}\n*Account #:* ${bankAccountNumber}\n${
+          bankBranchCode ? `*Branch Code:* ${bankBranchCode}\n` : ""
+        }`
+      : "";
+    const reminder =
+      selectedBroker === "deriv"
+        ? `*Reminder:* attach your Deriv withdrawal POP screenshot.`
+        : `*Reminder:* attach (1) proof of your Binance transfer to our wallet.`;
+    const feeLine =
+      feePct > 0
+        ? `*Desk Fee (5%):* -$${wFee.toFixed(2)}\n*Net Payout:* $${netPayout.toFixed(2)}\n`
+        : "";
+
+    const message = encodeURIComponent(
+      `*NEW WITHDRAWAL REQUEST — ChainForge*\n` +
+        `─────────────────────\n` +
+        `*Client:* ${formData.firstName} ${formData.lastName}\n` +
+        `*Email:* ${formData.email}\n` +
+        `*WhatsApp:* ${formData.whatsapp}\n` +
+        `─────────────────────\n` +
+        `*Source Broker:* ${selectedBroker.toUpperCase()}\n` +
+        `*Payout Method:* ${selectedMethod.replace("_", " ").toUpperCase()}\n` +
+        walletLine +
+        bankLine +
+        `*Amount:* $${grossAmt.toLocaleString()}\n` +
+        feeLine +
+        `─────────────────────\n` +
+        reminder
+    );
+
+    const targetNumber =
+      selectedBroker === "weltrade" || selectedBroker === "other"
+        ? "+263784293089"
+        : "+263782048523";
+
+    window.open(
+      `https://wa.me/${targetNumber}?text=${message}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  };
 
   return (
     <>
@@ -106,7 +196,7 @@ function WithdrawalPage() {
       <section className="mx-auto max-w-6xl px-6 pb-24">
         <div className="grid gap-8 lg:grid-cols-3 items-start">
           <div className="lg:col-span-2 space-y-6">
-            {/* 1. Identity */}
+            {/* 1. Personal Details */}
             <div className="card-animated rounded-3xl p-6">
               <h3 className="text-sm font-bold uppercase tracking-wider text-foreground font-['Montserrat'] mb-6 flex items-center gap-2">
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary-glow/20 text-primary-glow text-[10px]">
@@ -121,14 +211,14 @@ function WithdrawalPage() {
                   icon={<User className="h-4 w-4 text-muted-foreground mr-2.5" />}
                   value={formData.firstName}
                   placeholder="John"
-                  onChange={(v) => setFormData({ ...formData, firstName: v })}
+                  onChange={(v) => handleInputChange("firstName", v)}
                 />
                 <Field
                   label="Surname"
                   icon={<User className="h-4 w-4 text-muted-foreground mr-2.5" />}
                   value={formData.lastName}
                   placeholder="Doe"
-                  onChange={(v) => setFormData({ ...formData, lastName: v })}
+                  onChange={(v) => handleInputChange("lastName", v)}
                 />
                 <div className="sm:col-span-2">
                   <Field
@@ -137,7 +227,7 @@ function WithdrawalPage() {
                     icon={<Mail className="h-4 w-4 text-muted-foreground mr-2.5" />}
                     value={formData.email}
                     placeholder="johndoe@example.com"
-                    onChange={(v) => setFormData({ ...formData, email: v })}
+                    onChange={(v) => handleInputChange("email", v)}
                   />
                 </div>
                 <div className="sm:col-span-2">
@@ -147,7 +237,7 @@ function WithdrawalPage() {
                     icon={<Phone className="h-4 w-4 text-muted-foreground mr-2.5" />}
                     value={formData.whatsapp}
                     placeholder="+263 7xx xxx xxx"
-                    onChange={(v) => setFormData({ ...formData, whatsapp: v })}
+                    onChange={(v) => handleInputChange("whatsapp", v)}
                   />
                 </div>
               </div>
@@ -163,13 +253,7 @@ function WithdrawalPage() {
               </h3>
 
               <div className="grid gap-3 sm:grid-cols-3">
-                {(
-                  [
-                    { id: "weltrade", label: "Weltrade", logo: "/wel.png" },
-                    { id: "deriv", label: "Deriv", logo: "/der.png" },
-                    { id: "other", label: "Other", logo: "/bin.png" },
-                  ] as { id: BrokerType; label: string; logo: string }[]
-                ).map((broker) => (
+                {BROKER_OPTIONS.map((broker) => (
                   <button
                     key={broker.id}
                     onClick={() => setSelectedBroker(broker.id)}
@@ -261,14 +345,7 @@ function WithdrawalPage() {
               </h3>
 
               <div className="grid gap-4 sm:grid-cols-4">
-                {(
-                  [
-                    { id: "ecocash", label: "EcoCash", logo: "/ecocash.jpg" },
-                    { id: "innbucks", label: "InnBucks", logo: "/innbucks.png" },
-                    { id: "omari", label: "Omari", logo: "/omari.png" }, // Added Omari here
-                    { id: "fnb_eft", label: "FNB EFT", logo: "/fnb.png" },
-                  ] as { id: PayoutMethodType; label: string; logo: string }[]
-                ).map((method) => (
+                {PAYOUT_OPTIONS.map((method) => (
                   <button
                     key={method.id}
                     onClick={() => setSelectedMethod(method.id)}
@@ -397,128 +474,67 @@ function WithdrawalPage() {
                 </div>
               </div>
 
-              {(() => {
-                const grossAmt = Number(amount || 0);
-                const feePct = grossAmt >= 1000 ? 0.05 : 0;
-                const wFee = +(grossAmt * feePct).toFixed(2);
-                const netPayout = +(grossAmt - wFee).toFixed(2);
-                return (
-                  <>
-                    <div className="space-y-3.5 text-xs border-b border-border/60 pb-5">
-                      <Row label="Source Broker" value={selectedBroker} capitalize />
-                      <Row
-                        label="Payout Via"
-                        value={selectedMethod.replace("_", " ")}
-                        uppercase
-                      />
-                      <Row
-                        label="Gross Withdraw"
-                        value={`$${grossAmt.toLocaleString()}.00`}
-                        mono
-                      />
-                      {feePct > 0 && (
-                        <div className="flex justify-between items-center text-muted-foreground">
-                          <span>Desk Fee (5% · $1k+)</span>
-                          <span className="font-mono text-rose-400">- ${wFee.toFixed(2)}</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between items-center text-muted-foreground">
-                        <span className="flex items-center gap-1.5">
-                          <Clock className="h-3 w-3" /> ETA
-                        </span>
-                        <span className="font-mono text-foreground">~15 min</span>
-                      </div>
-                      <div className="pt-3 flex justify-between items-baseline">
-                        <span className="text-[10px] uppercase font-mono tracking-wider text-muted-foreground">
-                          Net Payout
-                        </span>
-                        <span className="text-xl font-bold tracking-tight text-primary-glow font-mono">
-                          ${netPayout.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </span>
-                      </div>
-                    </div>
+              <div className="space-y-3.5 text-xs border-b border-border/60 pb-5">
+                <Row label="Source Broker" value={selectedBroker} capitalize />
+                <Row
+                  label="Payout Via"
+                  value={selectedMethod.replace("_", " ")}
+                  uppercase
+                />
+                <Row
+                  label="Gross Withdraw"
+                  value={`$${grossAmt.toLocaleString()}.00`}
+                  mono
+                />
+                {feePct > 0 && (
+                  <div className="flex justify-between items-center text-muted-foreground">
+                    <span>Desk Fee (5% · $1k+)</span>
+                    <span className="font-mono text-rose-400">- ${wFee.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center text-muted-foreground">
+                  <span className="flex items-center gap-1.5">
+                    <Clock className="h-3 w-3" /> ETA
+                  </span>
+                  <span className="font-mono text-foreground">~15 min</span>
+                </div>
+                <div className="pt-3 flex justify-between items-baseline">
+                  <span className="text-[10px] uppercase font-mono tracking-wider text-muted-foreground">
+                    Net Payout
+                  </span>
+                  <span className="text-xl font-bold tracking-tight text-primary-glow font-mono">
+                    ${netPayout.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+              </div>
 
-                    {/* Flashing protocol */}
-                    <div className="mt-5 p-4 rounded-2xl protocol-flash text-xs">
-                      <p className="text-[10px] font-bold uppercase tracking-wider font-['Montserrat'] mb-3 flex items-center gap-1.5 protocol-flash-title">
-                        <Zap className="h-3.5 w-3.5" />
-                        Withdrawal Instructions
-                      </p>
-                      {selectedBroker === "deriv" ? (
-                        <DerivWithdrawalProtocol />
-                      ) : (
-                        <StandardWithdrawalProtocol />
-                      )}
-                    </div>
+              {/* Flashing protocol */}
+              <div className="mt-5 p-4 rounded-2xl protocol-flash text-xs">
+                <p className="text-[10px] font-bold uppercase tracking-wider font-['Montserrat'] mb-3 flex items-center gap-1.5 protocol-flash-title">
+                  <Zap className="h-3.5 w-3.5" />
+                  Withdrawal Instructions
+                </p>
+                {selectedBroker === "deriv" ? (
+                  <DerivWithdrawalProtocol />
+                ) : (
+                  <StandardWithdrawalProtocol />
+                )}
+              </div>
 
-                    {(() => {
-                      const walletLine = requiresWalletDetails
-                        ? `*Wallet Number:* ${walletNumber}\n*Name on Account:* ${walletName}\n`
-                        : "";
-                      const bankLine = requiresBankDetails
-                        ? `*Bank:* ${bankName}\n*Account Holder:* ${bankAccountName}\n*Account #:* ${bankAccountNumber}\n${bankBranchCode ? `*Branch Code:* ${bankBranchCode}\n` : ""}`
-                        : "";
-                      const reminder =
-                        selectedBroker === "deriv"
-                          ? `*Reminder:* attach your Deriv withdrawal POP screenshot.`
-                          : `*Reminder:* attach (1) proof of your Binance transfer to our wallet.`;
-                      const feeLine =
-                        feePct > 0
-                          ? `*Desk Fee (5%):* -$${wFee.toFixed(2)}\n*Net Payout:* $${netPayout.toFixed(2)}\n`
-                          : "";
-
-                      const buildMsg = () =>
-                        encodeURIComponent(
-                          `*NEW WITHDRAWAL REQUEST — ChainForge*\n` +
-                            `─────────────────────\n` +
-                            `*Client:* ${formData.firstName} ${formData.lastName}\n` +
-                            `*Email:* ${formData.email}\n` +
-                            `*WhatsApp:* ${formData.whatsapp}\n` +
-                            `─────────────────────\n` +
-                            `*Source Broker:* ${selectedBroker.toUpperCase()}\n` +
-                            `*Payout Method:* ${selectedMethod
-                              .replace("_", " ")
-                              .toUpperCase()}\n` +
-                            walletLine +
-                            bankLine +
-                            `*Amount:* $${grossAmt.toLocaleString()}\n` +
-                            feeLine +
-                            `─────────────────────\n` +
-                            reminder,
-                        );
-
-                      const dispatch = () => {
-                        if (!isFormValid) return;
-                        const msg = buildMsg();
-                        
-                        // Conditional WhatsApp routing based on the selected broker
-                        const targetNumber = (selectedBroker === "weltrade" || selectedBroker === "other") 
-                          ? "+263784293089" 
-                          : "+263782048523";
-
-                        window.open(`https://wa.me/${targetNumber}?text=${msg}`, "_blank", "noopener,noreferrer");
-                      };
-
-                      return (
-                        <button
-                          type="button"
-                          onClick={dispatch}
-                          disabled={!isFormValid}
-                          aria-disabled={!isFormValid}
-                          className={`group mt-6 w-full inline-flex items-center justify-center gap-2 rounded-xl px-6 py-4 text-sm font-semibold transition-all ${
-                            isFormValid
-                              ? "premium-button hover:scale-[1.01]"
-                              : "bg-muted/20 text-muted-foreground/40 cursor-not-allowed border border-border/50"
-                          }`}
-                        >
-                          <span>Request Liquidation</span>
-                          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                        </button>
-                      );
-                    })()}
-                  </>
-                );
-              })()}
+              <button
+                type="button"
+                onClick={handleDispatchWhatsApp}
+                disabled={!isFormValid}
+                aria-disabled={!isFormValid}
+                className={`group mt-6 w-full inline-flex items-center justify-center gap-2 rounded-xl px-6 py-4 text-sm font-semibold transition-all ${
+                  isFormValid
+                    ? "premium-button hover:scale-[1.01]"
+                    : "bg-muted/20 text-muted-foreground/40 cursor-not-allowed border border-border/50"
+                }`}
+              >
+                <span>Request Liquidation</span>
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              </button>
             </div>
           </div>
         </div>
