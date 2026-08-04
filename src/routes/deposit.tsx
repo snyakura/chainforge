@@ -577,6 +577,34 @@ function MobileDepositInstructions({
   const targetPhone = isDeriv ? PARADISE_PHONE : PHONE_NUMBER;
   const targetName = isDeriv ? "Paradise Mnqobi Sibanda" : "Marc Anthony";
 
+  // When Deriv is selected with EcoCash, show the Merchant details instead of personal number
+  if (isDeriv && method === "ecocash") {
+    return (
+      <ol className="space-y-3 text-amber-100/90 list-decimal pl-3.5">
+        <li>
+          <span className="font-semibold text-white">DIAL MERCHANT CODE</span> to pay our desk:
+          <div className="mt-1.5 flex flex-col items-start gap-1">
+            <CopyChip value="*153*2*2*002905#" label="*153*2*2*002905#" />
+          </div>
+          <p className="mt-1.5 text-[11px] text-muted-foreground">
+            EcoCash &rarr; Merchant Payment &rarr; paste the code &rarr; enter amount &rarr; confirm.
+          </p>
+        </li>
+        <li>
+          <span className="font-semibold text-white">SCREENSHOT</span> the successful transaction.
+        </li>
+        {showQrStep && (
+          <li>
+            <span className="font-semibold text-white">BINANCE QR:</span> save a screenshot of your Binance deposit QR code.
+          </li>
+        )}
+        <li>
+          <span className="font-semibold text-white">SEND</span> all screenshots on WhatsApp when redirected.
+        </li>
+      </ol>
+    );
+  }
+
   return (
     <ol className="space-y-3 text-amber-100/90 list-decimal pl-3.5">
       <li>
