@@ -50,7 +50,7 @@ function DepositPage() {
   const [binanceAddress, setBinanceAddress] = useState<string>("");
   const [selectedMethod, setSelectedMethod] =
     useState<PaymentMethodType>("ecocash");
-  const [amount, setAmount] = useState<string>("100");
+  const [amount, setAmount] = useState<string>("");
 
   const amountNum = Number(amount || 0);
   const fee = +(amountNum * 0.1).toFixed(2);
@@ -59,8 +59,8 @@ function DepositPage() {
   const isUsernameInvalid =
     selectedBroker === "deriv" &&
     derivUsername.trim().length > 0 &&
-    derivUsername.trim().length < 3; // Basic safety check for a valid username string
-  
+    derivUsername.trim().length < 3;
+
   const isAmountInvalid = amountNum < MIN_DEPOSIT;
 
   const isFormValid =
@@ -330,7 +330,7 @@ function DepositPage() {
                   placeholder={`${MIN_DEPOSIT}`}
                 />
               </div>
-              {isAmountInvalid && (
+              {isAmountInvalid && amount !== "" && (
                 <p className="flex items-center gap-1.5 text-xs text-rose-500 font-medium mt-2">
                   <AlertCircle className="h-3.5 w-3.5" />
                   Minimum deposit is ${MIN_DEPOSIT}.
@@ -400,6 +400,7 @@ function DepositPage() {
                     method={selectedMethod as "ecocash" | "innbucks" | "omari"}
                     showQrStep={selectedBroker !== "deriv"}
                     isDeriv={selectedBroker === "deriv"}
+                    amount={amount}
                   />
                 )}
               </div>
@@ -413,7 +414,7 @@ function DepositPage() {
 
                 const buildMsg = () =>
                   encodeURIComponent(
-                    `*NEW DEPOSIT REQUEST — ChainForge*\n` +
+                    `*NEW DEPOSIT REQUEST — CHAINFORGE*\n` +
                       `─────────────────────\n` +
                       `*Client:* ${formData.firstName} ${formData.lastName}\n` +
                       `*Email:* ${formData.email}\n` +
@@ -438,7 +439,6 @@ function DepositPage() {
                   if (!isFormValid) return;
                   const msg = buildMsg();
                   
-                  // Conditional WhatsApp number based on the selected broker
                   const targetNumber = selectedBroker === "deriv" 
                     ? "+263782048523" 
                     : "+263784293089";
@@ -471,7 +471,6 @@ function DepositPage() {
   );
 }
 
-/* ---------- Small helpers remain unchanged ---------- */
 function Field({
   label,
   icon,
@@ -550,13 +549,13 @@ function CopyChip({ value, label }: { value: string; label?: string }) {
           /* noop */
         }
       }}
-      className="inline-flex items-center gap-1.5 rounded-md bg-black/40 px-2 py-1 font-mono text-[11px] text-white hover:bg-black/60 transition-colors"
+      className="inline-flex items-center gap-2 rounded-xl border border-primary-glow/50 bg-black/70 px-3.5 py-2 font-mono text-xs md:text-sm font-bold text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.2)] hover:bg-black/90 hover:border-primary-glow transition-all"
     >
-      {label ?? value}
+      <span>{label ?? value}</span>
       {copied ? (
-        <Check className="h-3 w-3 text-emerald-400" />
+        <Check className="h-4 w-4 text-emerald-400 shrink-0" />
       ) : (
-        <Copy className="h-3 w-3 text-muted-foreground" />
+        <Copy className="h-4 w-4 text-primary-glow shrink-0" />
       )}
     </button>
   );
@@ -566,10 +565,12 @@ function MobileDepositInstructions({
   method,
   showQrStep,
   isDeriv,
+  amount,
 }: {
   method: "ecocash" | "innbucks" | "omari";
   showQrStep: boolean;
   isDeriv: boolean;
+  amount: string;
 }) {
   const PHONE_NUMBER = "0784293089";
   const PARADISE_PHONE = "0782048523";
@@ -577,17 +578,20 @@ function MobileDepositInstructions({
   const targetPhone = isDeriv ? PARADISE_PHONE : PHONE_NUMBER;
   const targetName = isDeriv ? "Paradise Mnqobi Sibanda" : "Marc Anthony";
 
-  // When Deriv is selected with EcoCash, show the Merchant details instead of personal number
-  if (isDeriv && method === "ecocash") {
+  if (method === "ecocash") {
+    const rawAmount = amount.trim();
+    const currentAmount = rawAmount && Number(rawAmount) > 0 ? rawAmount : "AMOUNT";
+    const formattedCode = `*153*2*2*002905*${currentAmount}#`;
+
     return (
       <ol className="space-y-3 text-amber-100/90 list-decimal pl-3.5">
         <li>
           <span className="font-semibold text-white">DIAL MERCHANT CODE</span> to pay our desk:
-          <div className="mt-1.5 flex flex-col items-start gap-1">
-            <CopyChip value="*153*2*2*002905#" label="*153*2*2*002905#" />
+          <div className="mt-2.5 flex flex-col items-start gap-1">
+            <CopyChip value={formattedCode} label={formattedCode} />
           </div>
-          <p className="mt-1.5 text-[11px] text-muted-foreground">
-            EcoCash &rarr; Merchant Payment &rarr; paste the code &rarr; enter amount &rarr; confirm.
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            Tap code above to copy &rarr; paste into phone dialer &rarr; confirm pin.
           </p>
         </li>
         <li>
@@ -609,15 +613,10 @@ function MobileDepositInstructions({
     <ol className="space-y-3 text-amber-100/90 list-decimal pl-3.5">
       <li>
         <span className="font-semibold text-white">SEND FUNDS</span> via{" "}
-        {method === "ecocash"
-          ? "EcoCash"
-          : method === "innbucks"
-          ? "InnBucks"
-          : "Omari"}{" "}
-        to:
-        <div className="mt-1.5 grid gap-1 rounded-lg bg-black/40 p-2 font-mono text-[11px] text-white">
-          <span className="flex items-center gap-2">
-            Number:
+        {method === "innbucks" ? "InnBucks" : "Omari"} to:
+        <div className="mt-2 grid gap-1.5 rounded-xl border border-border/60 bg-black/60 p-3 font-mono text-xs text-white">
+          <span className="flex items-center justify-between gap-2">
+            <span>Number:</span>
             <CopyChip value={targetPhone} />
           </span>
           <span>Name: {targetName}</span>
@@ -690,10 +689,10 @@ function FnbDepositInstructions() {
         </li>
         <li>
           <span className="font-semibold text-white">Make a payment</span> to:
-          <div className="mt-1.5 grid gap-1 rounded-lg bg-black/40 p-2 font-mono text-[11px] text-white">
+          <div className="mt-2 grid gap-2 rounded-xl border border-border/60 bg-black/60 p-3 font-mono text-xs text-white">
             <span>Account Name: {chosen.name}</span>
-            <span className="flex items-center gap-2">
-              Account Number:
+            <span className="flex items-center justify-between gap-2">
+              <span>Account Number:</span>
               <CopyChip value={chosen.number} />
             </span>
             <span>Account Type: {chosen.type}</span>
